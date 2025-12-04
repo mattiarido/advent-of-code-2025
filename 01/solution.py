@@ -12,7 +12,7 @@ def read_input():
         lines = [line.strip() for line in lines]
     return lines
 
-DIAL_START = 98
+DIAL_START = 50
 TURNING_POINT = 100
 
 def move_dial(current_position, direction, steps):
@@ -33,7 +33,7 @@ def move_dial(current_position, direction, steps):
 def move_dial_and_count_passes(current_position, direction, steps):
     passes = steps // TURNING_POINT
 
-    if steps > TURNING_POINT:
+    if steps >= TURNING_POINT:
         steps = steps % TURNING_POINT
         
     if direction == 'L':
@@ -44,10 +44,13 @@ def move_dial_and_count_passes(current_position, direction, steps):
             
         else:
             current_position = current_position - steps
+    
     elif direction == 'R':
-        if current_position + steps >= TURNING_POINT:
-            if current_position != 0:
-                passes += 1
+        if current_position + steps == TURNING_POINT:
+            current_position = 0
+
+        elif current_position + steps > TURNING_POINT:
+            passes += 1
             current_position = current_position + steps - TURNING_POINT
             
         else:

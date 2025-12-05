@@ -1,4 +1,4 @@
-# Challenge https://adventofcode.com/2025/day/3
+# Challenge https://adventofcode.com/2025/day/4
 
 import os
 

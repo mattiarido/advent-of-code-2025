@@ -1,4 +1,4 @@
-# Challenge https://adventofcode.com/2025/day/
+# Challenge https://adventofcode.com/2025/day/7
 
 import os
 import random

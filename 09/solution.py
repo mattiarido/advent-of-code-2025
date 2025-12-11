@@ -9,84 +9,17 @@ file_path = os.path.join(BASE_DIR, "puzzle_input.txt")
 def read_input():
     with open(file_path, 'r') as f:
         return [tuple(map(int, line.strip().split(','))) for line in f if line.strip()]
+    
+def normalize_input(input):
+    min_x = min(tile[0] for tile in input)
+    min_y = min(tile[1] for tile in input)
+
+    return [[tile[0] - min_x, tile[1] - min_y] for tile in input]
 
 def calculate_area(angle, opposite_angle):
     base = abs(angle[0]-opposite_angle[0]) + 1
     height = abs(angle[1]-opposite_angle[1]) + 1
     return base * height
-
-def get_perimeter(angle, opposite_angle):
-    perimeter = []
-
-    another_angle = [angle[0], opposite_angle[1]]
-    another_opposite_angle = [opposite_angle[0], angle[1]]
-
-    empty_spaces_horizontal = abs(angle[0] - opposite_angle[0]) - 1
-    empty_spaces_vertical = abs(angle[1] - opposite_angle[1]) - 1
-    
-    horizontal_start = min(angle[0], opposite_angle[0])
-    horizontal_end = max(angle[0], opposite_angle[0])
-    vertical_start = min(angle[1], opposite_angle[1])
-    vertical_end = max(angle[1], opposite_angle[1])
-
-    if empty_spaces_horizontal >= 0 or empty_spaces_vertical >= 0:
-        perimeter.append(another_angle)
-        perimeter.append(another_opposite_angle)
-    
-    if empty_spaces_horizontal > 0:
-        for row in range(1, empty_spaces_horizontal + 1):
-            perimeter.append([horizontal_start + row, angle[1]])
-            perimeter.append([horizontal_start + row, opposite_angle[1]])
-
-    if empty_spaces_vertical > 0:
-        for row in range(1, empty_spaces_vertical + 1):
-            perimeter.append([angle[0], vertical_start + row])
-            perimeter.append([opposite_angle[0], vertical_start + row])
-
-    return perimeter
-
-def is_point_in_perimeter(point, angle, another_angle, opposite_angle, another_opposite_angle):
-    if point[0] < min([angle[0], another_angle[0], opposite_angle[0], another_opposite_angle[0]]):
-        return False
-    
-    if point[0] > max([angle[0], another_angle[0], opposite_angle[0], another_opposite_angle[0]]):
-        return False
-    
-    if point[1] < min([angle[1], another_angle[1], opposite_angle[1], another_opposite_angle[1]]):
-        return False
-    
-    if point[1] > max([angle[1], another_angle[1], opposite_angle[1], another_opposite_angle[1]]):
-        return False
-    
-    return True
-
-def tiles_validation(valid_tile1, valid_tile2, tile1, tile2):
-    if tile1[0] < min(valid_tile1[0], valid_tile2[0]):
-        return False
-    
-    if tile1[0] > max(valid_tile1[0], valid_tile2[0]):
-        return False
-    
-    if tile2[0] < min(valid_tile1[0], valid_tile2[0]):
-        return False
-    
-    if tile2[0] > max(valid_tile1[0], valid_tile2[0]):
-        return False
-    
-    if tile1[1] < min(valid_tile1[1], valid_tile2[1]):
-        return False
-    
-    if tile1[1] > max(valid_tile1[1], valid_tile2[1]):
-        return False
-    
-    if tile2[1] < min(valid_tile1[1], valid_tile2[1]):
-        return False
-    
-    if tile2[1] > max(valid_tile1[1], valid_tile2[1]):
-        return False
-    
-    return True
-
 
 def part_1(tiles):
 
@@ -104,6 +37,8 @@ def part_1(tiles):
 
     
 def part_2(tiles_red):
+
+    # Fill the edge gaps
     tiles_green = []
     
     for i in range(len(tiles_red)):
@@ -126,28 +61,50 @@ def part_2(tiles_red):
         for row in range(1, green_tiles_vertical + 1):
             tiles_green.append([tile_red[0], vertical_start + row])
 
+    polygon_perimeter = tiles_red + tiles_green
+
+    # Loop over couples of red tiles: 
+    #   - construct the rectangle
+    #   - check that every point inside the ractangle lays inside the polygon: go left/right from the point and count how many times a border is hit. If odd, the point is inside. Do the same for up/down
+    
+    grid_boundary_x = (min(tile[0] for tile in tiles_red), max(tile[0] for tile in tiles_red))
+    grid_boundary_y = (min(tile[1] for tile in tiles_red), max(tile[1] for tile in tiles_red))
+
     areas = []
     for i in range(len(tiles_red)):
         for j in range(i + 1, len(tiles_red)):
             tile1 = tiles_red[i]
             tile2 = tiles_red[j]
 
-            # print(f'considering {tile1} and {tile2}')
+            print(f'considering {tile1} and {tile2}')
 
-            is_valid_area = False
-            for k in range(len(tiles_red)):
-                valid_tile1 = tiles_red[k]
+            x_points = range(min(tile1[0], tile2[0]) + 1, max(tile1[0], tile2[0])) 
+            y_points = range(min(tile1[1], tile2[1]) + 1, max(tile1[1], tile2[1])) 
+
+            is_valid_area = True
+            for x, y in [(x, y) for x in x_points for y in y_points]:
                 
-                if k == len(tiles_red) - 1:
-                    valid_tile2 = tiles_red[0]
-                else:
-                    valid_tile2 = tiles_red[k + 1]
+                # filter polygon perimenter for efficency
+                perimeter_reacheable_x = set([pol_point[0] for pol_point in polygon_perimeter if pol_point[1] == y])
+                perimeter_reacheable_y = set([pol_point[1] for pol_point in polygon_perimeter if pol_point[0] == x])
 
-                    print(f'considering {tile1} and {tile2} in {valid_tile1},{valid_tile2} the result is {tiles_validation(valid_tile1, valid_tile2, tile1, tile2)}')
+                polygon_borders = 0
+                for look_x_right in range(x + 1, grid_boundary_x[1] + 1):
+                    # print('evaluating', [look_x_right, y], 'in', perimeter_reacheable_x)
+                    if look_x_right in perimeter_reacheable_x:
+                        polygon_borders += 1
+                if polygon_borders % 2 == 0:
+                    is_valid_area = False
+                    break
 
-                    if tiles_validation(valid_tile1, valid_tile2, tile1, tile2):
-                        is_valid_area = True
-                        break
+                polygon_borders = 0
+                for look_y_up in range(y + 1, grid_boundary_y[1] + 1):
+                    if look_y_up in perimeter_reacheable_y:
+                        polygon_borders += 1
+                if polygon_borders % 2 == 0:
+                    is_valid_area = False
+                    break
+
             
             if not is_valid_area:
                 print(f'skipping {tile1} and {tile2}')

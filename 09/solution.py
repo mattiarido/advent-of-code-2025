@@ -62,6 +62,7 @@ def part_2(tiles_red):
             tiles_green.append([tile_red[0], vertical_start + row])
 
     polygon_perimeter = tiles_red + tiles_green
+    perimeter_set = set(map(tuple, polygon_perimeter))
 
     # Loop over couples of red tiles: 
     #   - construct the rectangle
@@ -76,22 +77,22 @@ def part_2(tiles_red):
             tile1 = tiles_red[i]
             tile2 = tiles_red[j]
 
+            # for easiness, I'll skip all the segment-like rectangles
+            if tile1[0] == tile2[0] or tile1[1] == tile2[1]:
+                continue
+
             print(f'considering {tile1} and {tile2}')
 
-            x_points = range(min(tile1[0], tile2[0]) + 1, max(tile1[0], tile2[0])) 
-            y_points = range(min(tile1[1], tile2[1]) + 1, max(tile1[1], tile2[1])) 
+            x_points = (min(tile1[0], tile2[0]) + 1, max(tile1[0], tile2[0]) - 1) 
+            y_points = (min(tile1[1], tile2[1]) + 1, max(tile1[1], tile2[1]) - 1) 
 
             is_valid_area = True
             for x, y in [(x, y) for x in x_points for y in y_points]:
                 
-                # filter polygon perimenter for efficency
-                perimeter_reacheable_x = set([pol_point[0] for pol_point in polygon_perimeter if pol_point[1] == y])
-                perimeter_reacheable_y = set([pol_point[1] for pol_point in polygon_perimeter if pol_point[0] == x])
-
                 polygon_borders = 0
                 for look_x_right in range(x + 1, grid_boundary_x[1] + 1):
                     # print('evaluating', [look_x_right, y], 'in', perimeter_reacheable_x)
-                    if look_x_right in perimeter_reacheable_x:
+                    if (look_x_right, y) in perimeter_set:
                         polygon_borders += 1
                 if polygon_borders % 2 == 0:
                     is_valid_area = False
@@ -99,7 +100,7 @@ def part_2(tiles_red):
 
                 polygon_borders = 0
                 for look_y_up in range(y + 1, grid_boundary_y[1] + 1):
-                    if look_y_up in perimeter_reacheable_y:
+                    if (x, look_y_up) in perimeter_set:
                         polygon_borders += 1
                 if polygon_borders % 2 == 0:
                     is_valid_area = False
@@ -120,7 +121,7 @@ def part_2(tiles_red):
 
 if __name__ == "__main__":
     sequences = read_input()
-    sequences = [[3, 4], [3, 6], [7, 6], [7, 2], [6, 2], [6, 4]]
+    # sequences = [[3, 4], [3, 6], [7, 6], [7, 2], [6, 2], [6, 4]]
     print(f'tiles {sequences}')
     # print("Part 1:")
     # areas = part_1(sequences)

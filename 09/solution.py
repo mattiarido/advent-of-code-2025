@@ -1,6 +1,7 @@
 # Challenge https://adventofcode.com/2025/day/
 
 import os
+from collections import defaultdict
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -62,15 +63,17 @@ def part_2(tiles_red):
             tiles_green.append([tile_red[0], vertical_start + row])
 
     polygon_perimeter = tiles_red + tiles_green
-    perimeter_set = set(map(tuple, polygon_perimeter))
+
+    perimeter_x = defaultdict(set)
+    perimeter_y = defaultdict(set)
+    for x, y in polygon_perimeter:
+        perimeter_x[y].add(x)
+        perimeter_y[x].add(y)
 
     # Loop over couples of red tiles: 
     #   - construct the rectangle
     #   - check that every point inside the ractangle lays inside the polygon: go left/right from the point and count how many times a border is hit. If odd, the point is inside. Do the same for up/down
     
-    grid_boundary_x = (min(tile[0] for tile in tiles_red), max(tile[0] for tile in tiles_red))
-    grid_boundary_y = (min(tile[1] for tile in tiles_red), max(tile[1] for tile in tiles_red))
-
     areas = []
     for i in range(len(tiles_red)):
         for j in range(i + 1, len(tiles_red)):
@@ -89,20 +92,13 @@ def part_2(tiles_red):
             is_valid_area = True
             for x, y in [(x, y) for x in x_points for y in y_points]:
                 
-                polygon_borders = 0
-                for look_x_right in range(x + 1, grid_boundary_x[1] + 1):
-                    # print('evaluating', [look_x_right, y], 'in', perimeter_reacheable_x)
-                    if (look_x_right, y) in perimeter_set:
-                        polygon_borders += 1
-                if polygon_borders % 2 == 0:
+                row_hits = [px for px in perimeter_x[y] if px > x]
+                if len(row_hits) % 2 == 0:
                     is_valid_area = False
                     break
-
-                polygon_borders = 0
-                for look_y_up in range(y + 1, grid_boundary_y[1] + 1):
-                    if (x, look_y_up) in perimeter_set:
-                        polygon_borders += 1
-                if polygon_borders % 2 == 0:
+                    
+                col_hits = [py for py in perimeter_y[x] if py > y]
+                if len(col_hits) % 2 == 0:
                     is_valid_area = False
                     break
 
